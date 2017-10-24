@@ -1,8 +1,3 @@
-# import sys
-# lib_path = '/Users/weijiawu/PyTorchProjects/Img_Stitch'
-# sys.path.insert(0, lib_path)
-# print(sys.path)
-
 # import Dataset_Generator as dg
 import DataDownloader_wuweijia as data_loader
 from skimage import img_as_ubyte
@@ -10,20 +5,11 @@ from skimage.viewer import ImageViewer
 import numpy as np
 import matplotlib.pyplot as plt
 
-root_dir_wuweijia = './20171020_morning/'
-
-transformed_dataset = data_loader.number_dataset(root_dir=root_dir_wuweijia, \
-                                                       transform=data_loader.transforms.Compose([data_loader.ToTensor(),\
-                                                                                                 # data_loader.Slice(0), \
-                                                        data_loader.Normalize([0.485, 0.456,0.406], [0.229, 0.224,0.225])]))
-
-train_data_loader = data_loader.DataLoader(transformed_dataset, batch_size=4,
-                        shuffle=True, num_workers=2)
-
 from torch.autograd import Variable
 import torch.nn as nn
 import torch.nn.functional as F
 
+import torch.optim as optim
 
 class Net(nn.Module):
     def __init__(self):
@@ -45,10 +31,17 @@ class Net(nn.Module):
         x = self.fc2(x)
         return x
 
+root_dir_wuweijia = './20171020_morning/'
+
+transformed_dataset = data_loader.number_dataset(root_dir=root_dir_wuweijia, \
+                                                       transform=data_loader.transforms.Compose([data_loader.ToTensor(),\
+                                                                                                 # data_loader.Slice(0), \
+                                                        data_loader.Normalize([0.485, 0.456,0.406], [0.229, 0.224,0.225])]))
+
+train_data_loader = data_loader.DataLoader(transformed_dataset, batch_size=4,
+                        shuffle=True, num_workers=2)
 
 net = Net()
-
-import torch.optim as optim
 
 criterion = nn.MSELoss()
 optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
@@ -79,27 +72,27 @@ for epoch in range(1):  # loop over the dataset multiple times
         # print statistics
         running_loss += loss.data[0]
 
-        # if i % 20 == 19:    # print every 20 mini-batches
-        print('[%d, %5d] loss: %.30f' %
-              (epoch + 1, i + 1, loss.data[0]))
-        running_loss = 0.0
-        predicted = outputs.view([-1, 54, 54])
-        a = predicted.data.numpy()[0, :, :]
-        a = (a - a.min()) / (a.max() - a.min())
-        # viewer = ImageViewer(img_as_ubyte(a))
-        # viewer.show()
+        if i % 20 == 19:    # print every 20 mini-batches
+            print('[%d, %5d] loss: %.30f' %
+                  (epoch + 1, i + 1, loss.data[0]))
+            running_loss = 0.0
+            predicted = outputs.view([-1, 54, 54])
+            a = predicted.data.numpy()[0, :, :]
+            a = (a - a.min()) / (a.max() - a.min())
+            viewer = ImageViewer(img_as_ubyte(a))
+            viewer.show()
 
-        b = labels.view([-1, 54, 54])
-        b = b.data.numpy()[0, :, :]
-        b = (b - b.min())/(b.max() - b.min())
+            b = labels.view([-1, 54, 54])
+            b = b.data.numpy()[0, :, :]
+            b = (b - b.min())/(b.max() - b.min())
 
-        c = a - b
-        c = c**2
-        c = c.sum()
-        # view_b = ImageViewer(img_as_ubyte(b))
-        # view_b.show()
-        my_loss_data.append(c/2916.0)
-        standard_loss_data.append(loss.data[0])
+            c = a - b
+            c = c**2
+            c = c.sum()
+            view_b = ImageViewer(img_as_ubyte(b))
+            view_b.show()
+            my_loss_data.append(c/2916.0)
+            standard_loss_data.append(loss.data[0])
     plt.figure()
     plt.plot(range(len(my_loss_data)), my_loss_data)
     plt.xlabel("mini-batch times")
