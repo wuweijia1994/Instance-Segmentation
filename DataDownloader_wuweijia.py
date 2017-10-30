@@ -42,11 +42,11 @@ class number_dataset(Dataset):
     def __getitem__(self, idx):
         img_name = os.path.join(self.root_dir, 'image_' + str(idx) + '.jpg')
         image = io.imread(img_name)
-        groundtruth_image = np.zeros([54, 54], np.uint8).reshape([54 * 54])
+        groundtruth_image = np.zeros([54, 54], np.uint8)
         for i in range(4):
             temp_image_name = os.path.join(self.root_dir, 'image_' + str(idx) +'_gt_' + str(i) + '.npy')
             new_image = np.load(temp_image_name)
-            new_image = new_image[:, :, 0].reshape([54 * 54])
+            new_image = (new_image[:, :, 0]/50).astype(np.uint8)
             groundtruth_image = groundtruth_image + new_image
 
         sample = {'image': image, 'groundtruth_image': groundtruth_image}
