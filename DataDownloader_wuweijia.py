@@ -8,6 +8,8 @@ from torchvision import transforms, utils
 
 # Ignore warnings
 import warnings
+import copy
+
 warnings.filterwarnings("ignore")
 
 # plt.ion()   # interactive mode
@@ -40,16 +42,19 @@ class number_dataset(Dataset):
         # return len(self.landmarks_frame)
 
     def __getitem__(self, idx):
-        img_name = os.path.join(self.root_dir, 'image_' + str(idx) + '.jpg')
-        image = io.imread(img_name)
-        groundtruth_image = np.zeros([54, 54], np.uint8)
-        for i in range(4):
-            temp_image_name = os.path.join(self.root_dir, 'image_' + str(idx) +'_gt_' + str(i) + '.npy')
-            new_image = np.load(temp_image_name)
-            new_image = (new_image[:, :, 0]/50).astype(np.uint8)
-            groundtruth_image = groundtruth_image + new_image
+        img_name = os.path.join(self.root_dir, 'gt_image_' + str(idx) + '.png')
+        gt_image = io.imread(img_name)
+        input_image = copy.deepcopy(gt_image)
+        input_image[input_image > 0] = 255
+        gt_image = gt_image[:, :, 0]/50
+        # groundtruth_image = np.zeros([54, 54], np.uint8)
+        # for i in range(4):
+        #     temp_image_name = os.path.join(self.root_dir, 'image_' + str(idx) +'_gt_' + str(i) + '.npy')
+        #     new_image = np.load(temp_image_name)
+        #     new_image = (new_image[:, :, 0]/50).astype(np.uint8)
+        #     groundtruth_image = groundtruth_image + new_image
 
-        sample = {'image': image, 'groundtruth_image': groundtruth_image}
+        sample = {'image': input_image, 'groundtruth_image': gt_image}
 
         if self.transform:
             sample = self.transform(sample)
