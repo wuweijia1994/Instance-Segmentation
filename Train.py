@@ -12,8 +12,9 @@ import torch.nn.functional as F
 import torch
 
 import torch.optim as optim
+import torch.optim.lr_scheduler as lr
 
-root_dir_wuweijia = './20171020_morning/'
+root_dir_wuweijia = './20171102_morning/'
 
 transformed_dataset = data_loader.number_dataset(root_dir=root_dir_wuweijia, \
                                                        transform=data_loader.transforms.Compose([data_loader.ToTensor(),\
@@ -21,16 +22,18 @@ transformed_dataset = data_loader.number_dataset(root_dir=root_dir_wuweijia, \
                                                         data_loader.Normalize([0, 0, 0], [1, 1, 1])]))
 
 
-train_data_loader = data_loader.DataLoader(transformed_dataset, batch_size=2,
+train_data_loader = data_loader.DataLoader(transformed_dataset, batch_size=5,
                         shuffle=True, num_workers=3)
 
 
 net = fcn.Fcn()
 
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
+optimizer = optim.Adam(net.parameters(), lr=0.0003)
 my_loss_data = []
 standard_loss_data = []
+
+scheduler = lr.StepLR(optimizer, step_size=1, gamma=0.1)
 
 def cross_entropy2d(input, target, weight=None, size_average=True):
     # input: (n, c, h, w), target: (n, h, w)
@@ -39,6 +42,7 @@ def cross_entropy2d(input, target, weight=None, size_average=True):
     log_p = F.log_softmax(input)
     # log_p: (n*h*w, c)
     log_p = log_p.transpose(1, 2).transpose(2, 3).contiguous().view(-1, c)
+    # a = target.view(n, h, w, -1)
     log_p = log_p[target.view(n, h, w, 1).repeat(1, 1, 1, c) >= 0]
     log_p = log_p.view(-1, c)
     # target: (n*h*w,)
@@ -59,10 +63,11 @@ def show_output_data(outputs, mean, dev):
 
 def show_picture(img):
     img= img * 50
+    temp = img_as_ubyte(img)
     viewer = ImageViewer(img_as_ubyte(img))
     viewer.show()
 
-for epoch in range(5):  # loop over the dataset multiple times
+for epoch in range(50):  # loop over the dataset multiple times
 
     loss_recorder = []
     running_loss = 0.0
@@ -91,25 +96,25 @@ for epoch in range(5):  # loop over the dataset multiple times
         running_loss += loss.data[0]
         loss_recorder.append(loss.data[0])
 
-        if i % 240 == 239:    # print every 120 mini-batches
+        if i % 140 == 139:    # print every 120 mini-batches
             print('[%d, %5d] loss: %.30f' %
                   (epoch + 1, i + 1, loss.data[0]))
             running_loss = 0.0
             _, predicted = torch.max(outputs.data, 1)
             pre = predicted.numpy()
-            show_picture(pre[0])
-            show_picture(labels.data.numpy()[0])
+            # s =
+            show_picture(np.concatenate((pre[0], labels.data.numpy()[0]), 1))
+            # show_picture(labels.data.numpy()[0])
+            # show_picture(img_as_ubyte(inputs.data.numpy()[0]/255.0))
             # show_picture(pre[1])
             # show_picture(pre[2])
             # show_picture(pre[3])
 
-            output_debug = labels.data.numpy()
-            predicted = show_output_data(outputs, 3, 0.3)
-            labels = show_output_data(labels, 3, 0.3)
-            plt.plot(range(len(loss_recorder)), loss_recorder)
-
-
-
+            # output_debug = labels.data.numpy()
+            # predicted = show_output_data(outputs, 3, 0.3)
+            # labels = show_output_data(labels, 3, 0.3)
+            # plt.plot(range(len(loss_recorder)), loss_recorder)
+            # plt.show();
 
             # a = (a - a.min()) / (a.max() - a.min())
             # viewer = ImageViewer(img_as_ubyte(a))
