@@ -1,4 +1,4 @@
-import Conv_TransConv as cfcn
+import FCN as fcn
 import DataDownloader_wuweijia as data_loader
 
 from skimage import img_as_ubyte
@@ -14,7 +14,7 @@ import torch
 import torch.optim as optim
 import torch.optim.lr_scheduler as lr
 
-root_dir_wuweijia = './20171102_morning/'
+root_dir_wuweijia = './20171114_morning/'
 
 transformed_dataset = data_loader.number_dataset(root_dir=root_dir_wuweijia, \
                                                        transform=data_loader.transforms.Compose([data_loader.ToTensor(),\
@@ -22,11 +22,11 @@ transformed_dataset = data_loader.number_dataset(root_dir=root_dir_wuweijia, \
                                                         data_loader.Normalize([0, 0, 0], [1, 1, 1])]))
 
 
-train_data_loader = data_loader.DataLoader(transformed_dataset, batch_size=5,
-                        shuffle=True, num_workers=3)
+train_data_loader = data_loader.DataLoader(transformed_dataset, batch_size=10,
+                        shuffle=True, num_workers=4)
 
 
-net = cfcn.C_TCn()
+net = fcn.fcn()
 
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(net.parameters(), lr=0.0003)
@@ -62,7 +62,7 @@ def show_output_data(outputs, mean, dev):
     return outputs_data
 
 def show_picture(img):
-    img= img * 50
+    img= img * 25
     temp = img_as_ubyte(img)
     viewer = ImageViewer(img_as_ubyte(img))
     viewer.show()
@@ -73,10 +73,7 @@ for epoch in range(50):  # loop over the dataset multiple times
     running_loss = 0.0
     for i, data in enumerate(train_data_loader, 0):
         # get the inputs
-        # data = train_data_loader[i]
         inputs, labels = data['image'], data['groundtruth_image']
-        # inputs = image
-        # labels = groundtruth_image
 
         # wrap them in Variable
         inputs, labels = Variable(inputs), Variable(labels.type(data_loader.torch.LongTensor))
@@ -87,8 +84,6 @@ for epoch in range(50):  # loop over the dataset multiple times
         # forward + backward + optimize
         outputs = net(inputs)
         loss = cross_entropy2d(outputs, labels)
-        # loss /= len()
-        # loss = criterion(outputs, labels)
         loss.backward()
         optimizer.step()
 
@@ -96,14 +91,15 @@ for epoch in range(50):  # loop over the dataset multiple times
         running_loss += loss.data[0]
         loss_recorder.append(loss.data[0])
 
-        if i % 140 == 139:    # print every 120 mini-batches
+        if i % 50 == 49:    # print every 120 mini-batches
             print('[%d, %5d] loss: %.30f' %
                   (epoch + 1, i + 1, loss.data[0]))
             running_loss = 0.0
             _, predicted = torch.max(outputs.data, 1)
             pre = predicted.numpy()
             # s =
-            show_picture(np.concatenate((pre[0], labels.data.numpy()[0]), 1))
+            if(epoch > 35):
+                show_picture(np.concatenate((pre[0], labels.data.numpy()[0]), 1))
             # show_picture(labels.data.numpy()[0])
             # show_picture(img_as_ubyte(inputs.data.numpy()[0]/255.0))
             # show_picture(pre[1])
@@ -123,7 +119,7 @@ for epoch in range(50):  # loop over the dataset multiple times
             # b = labels.view([-1, 54, 54])
             # b = b.data.numpy()[0, :, :]
             # b = (b - b.min())/(b.max() - b.min())
-            # 
+            #
             # c = a - b
             # c = c**2
             # c = c.sum()

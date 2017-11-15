@@ -38,7 +38,7 @@ class number_dataset(Dataset):
         self.transform = transform
 
     def __len__(self):
-        return 27 * 27
+        return 1500
         # return len(self.landmarks_frame)
 
     def __getitem__(self, idx):
@@ -46,14 +46,7 @@ class number_dataset(Dataset):
         gt_image = io.imread(img_name)
         input_image = copy.deepcopy(gt_image)
         input_image[input_image > 0] = 255
-        gt_image = gt_image[:, :, 0]/50
-        # groundtruth_image = np.zeros([54, 54], np.uint8)
-        # for i in range(4):
-        #     temp_image_name = os.path.join(self.root_dir, 'image_' + str(idx) +'_gt_' + str(i) + '.npy')
-        #     new_image = np.load(temp_image_name)
-        #     new_image = (new_image[:, :, 0]/50).astype(np.uint8)
-        #     groundtruth_image = groundtruth_image + new_image
-
+        gt_image = gt_image[:, :, 0]/25
         sample = {'image': input_image, 'groundtruth_image': gt_image}
 
         if self.transform:
